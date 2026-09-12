@@ -6,8 +6,8 @@ export function Button({
   ...props
 }) {
   const variants = {
-    primary: 'ct-button-primary',
-    navy: 'ct-button-navy',
+    primary: 'ct-button-primary ct-button-shimmer',
+    navy: 'ct-button-navy ct-button-shimmer',
     teal: 'ct-button-teal',
     secondary: 'ct-button-secondary',
   };
@@ -20,7 +20,7 @@ export function Button({
 
 export function Card({ className = '', children, ...props }) {
   return (
-    <div className={`ct-card ${className}`} {...props}>
+    <div className={`ct-card group ${className}`} {...props}>
       {children}
     </div>
   );
@@ -102,7 +102,7 @@ export function Field({ label, id, error, children, hint }) {
       {children}
       {hint && !error && <p className="mt-1 text-xs text-ink-muted">{hint}</p>}
       {error && (
-        <p className="mt-1 text-xs font-medium text-danger" role="alert">
+        <p className="ct-feedback mt-1 text-xs font-medium text-danger" role="alert">
           {error}
         </p>
       )}

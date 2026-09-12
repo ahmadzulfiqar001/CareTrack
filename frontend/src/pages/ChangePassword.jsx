@@ -43,7 +43,7 @@ export default function ChangePassword() {
 
   return (
     <div className="ct-container py-10">
-      <div className="mx-auto max-w-lg">
+      <div className="ct-page-enter mx-auto max-w-lg">
         <Link to="/me" className="text-sm font-semibold text-care-blue hover:underline">
           ← Back to my health
         </Link>
@@ -51,12 +51,12 @@ export default function ChangePassword() {
           <h1 className="ct-display mt-2 text-3xl">Change password</h1>
 
           {msg && (
-            <div className="mt-4 rounded-control border border-green-200 bg-green-50 px-4 py-3 text-sm text-success">
+            <div className="ct-feedback mt-4 rounded-control border border-green-200 bg-green-50 px-4 py-3 text-sm text-success">
               {msg}
             </div>
           )}
           {error && (
-            <div className="mt-4 rounded-control border border-red-200 bg-red-50 px-4 py-3 text-sm text-danger">
+            <div className="ct-feedback mt-4 rounded-control border border-red-200 bg-red-50 px-4 py-3 text-sm text-danger">
               {error}
             </div>
           )}

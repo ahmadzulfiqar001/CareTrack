@@ -45,7 +45,7 @@ export default function FlagBadge({ flag }) {
   const meta = getFlagMeta(flag);
   return (
     <span
-      className={`mr-1.5 mb-1.5 inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold ${meta.className}`}
+      className={`mr-1.5 mb-1.5 inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold transition duration-300 ${meta.className}`}
       title={`${meta.tone}: ${meta.label}`}
     >
       <span className="sr-only">{meta.tone}: </span>

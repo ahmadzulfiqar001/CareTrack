@@ -98,7 +98,7 @@ export default function AddPatient() {
   return (
     <div className="min-h-[calc(100vh-4.25rem)] bg-slate-50">
       <div className="ct-container py-6 sm:py-8">
-        <div className="mx-auto max-w-3xl">
+        <div className="ct-page-enter mx-auto max-w-3xl">
           <nav className="mb-5 flex flex-wrap items-center gap-2 text-sm text-ink-muted" aria-label="Breadcrumb">
             <Link to="/doctor" className="font-medium transition hover:text-care-blue">
               Doctor Dashboard
@@ -124,7 +124,7 @@ export default function AddPatient() {
             <form onSubmit={submit} className="px-5 py-6 sm:px-8 sm:py-7" noValidate>
               {error && (
                 <div
-                  className="mb-5 rounded-control border border-red-200 bg-red-50 px-4 py-3 text-sm text-danger"
+                  className="ct-feedback mb-5 rounded-control border border-red-200 bg-red-50 px-4 py-3 text-sm text-danger"
                   role="alert"
                 >
                   {error}
@@ -132,7 +132,7 @@ export default function AddPatient() {
               )}
               {success && (
                 <div
-                  className="mb-5 rounded-control border border-green-200 bg-green-50 px-4 py-3 text-sm text-success"
+                  className="ct-feedback mb-5 rounded-control border border-green-200 bg-green-50 px-4 py-3 text-sm text-success"
                   role="status"
                 >
                   {success}
