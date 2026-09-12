@@ -1,0 +1,89 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    margin: 0;
+    min-width: 320px;
+    background: #f8fafc;
+    color: #0f172a;
+    font-family: 'DM Sans', ui-sans-serif, system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+  }
+
+  button {
+    cursor: pointer;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  :focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  .ct-container {
+    @apply mx-auto w-full max-w-content px-5 sm:px-6 lg:px-8;
+  }
+
+  .ct-card {
+    @apply rounded-card border border-line bg-white shadow-card;
+  }
+
+  .ct-button-primary {
+    @apply inline-flex items-center justify-center rounded-control bg-care-blue px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .ct-button-navy {
+    @apply inline-flex items-center justify-center rounded-control bg-navy px-5 py-3 text-sm font-semibold text-white transition hover:bg-navy-deep active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .ct-button-teal {
+    @apply inline-flex items-center justify-center rounded-control bg-care-teal px-5 py-3 text-sm font-semibold text-white transition hover:bg-teal-800 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .ct-button-secondary {
+    @apply inline-flex items-center justify-center rounded-control border border-line bg-white px-5 py-3 text-sm font-semibold text-navy transition hover:bg-slate-50 active:scale-[0.98];
+  }
+
+  .ct-input {
+    @apply w-full rounded-control border border-line bg-white px-4 py-3 text-ink outline-none transition placeholder:text-ink-muted focus:border-care-blue focus:ring-4 focus:ring-care-blue/10;
+  }
+
+  .ct-label {
+    @apply mb-1.5 block text-xs font-bold uppercase tracking-wide text-ink;
+  }
+
+  .ct-kicker {
+    @apply text-[11px] font-extrabold uppercase tracking-[0.14em] text-care-blue;
+  }
+
+  .ct-section {
+    @apply py-16 sm:py-20;
+  }
+
+  .ct-display {
+    @apply font-display text-navy tracking-tight;
+  }
+}
