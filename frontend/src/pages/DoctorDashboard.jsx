@@ -4,6 +4,14 @@ import api, { getApiErrorMessage } from '../api/client';
 import PatientCard from '../components/PatientCard';
 import { useAuth } from '../context/AuthContext';
 import { Button, Card, EmptyState, LoadingState, StatCard } from '../components/ui';
+import { formatReadingTypeLabel } from '../utils/readings';
+import {
+  isForbiddenError,
+  normalizeOverduePayload,
+  readingOverdueFromDashboard,
+  readingReminderMessage,
+  reminderPermissionMessage,
+} from '../utils/reminders';
 
 export default function DoctorDashboard() {
   const { user } = useAuth();
@@ -37,11 +45,22 @@ export default function DoctorDashboard() {
     setModalLoading(true);
     setModalError('');
     setOverdue([]);
+    const fallback = readingOverdueFromDashboard(patients);
     try {
       const preview = await api.get('/reminders/overdue-readings');
-      setOverdue(preview.data || []);
+      const list = normalizeOverduePayload(preview.data);
+      setOverdue(list.length ? list : fallback);
     } catch (e) {
-      setModalError(getApiErrorMessage(e, 'Failed to load overdue patients'));
+      // GET /reminders/:patientId also matches "overdue-readings" on some backends
+      // and returns 403. Fall back to the already-loaded dashboard patient list.
+      if (isForbiddenError(e) || e.response?.status === 404) {
+        setOverdue(fallback);
+      } else {
+        setOverdue(fallback);
+        if (!fallback.length) {
+          setModalError(getApiErrorMessage(e, 'Failed to load overdue patients'));
+        }
+      }
     } finally {
       setModalLoading(false);
     }
@@ -53,17 +72,63 @@ export default function DoctorDashboard() {
     setModalError('');
   };
 
+  const sendViaTrigger = async (targets) => {
+    let sent = 0;
+    let lastError = null;
+    for (const p of targets) {
+      try {
+        await api.post('/reminders/trigger', {
+          patient_id: p.patient_id,
+          type: 'reading_reminder',
+          message: readingReminderMessage(p.full_name),
+        });
+        sent += 1;
+      } catch (e) {
+        lastError = e;
+      }
+    }
+    if (sent === 0 && lastError) throw lastError;
+    return sent;
+  };
+
   // ── confirm & send ───────────────────────────
   const confirmSend = async () => {
+    if (!overdue.length) {
+      setModalError('No patients currently need a reading reminder.');
+      return;
+    }
+
     setSending(true);
     setModalError('');
     try {
-      const res = await api.post('/reminders/send-overdue-readings');
-      setSentMsg(`Sent to ${res.data.sent} patient(s).`);
-      setTimeout(() => setSentMsg(''), 3500);
+      let count;
+      try {
+        const res = await api.post('/reminders/send-overdue-readings');
+        count = typeof res.data?.sent === 'number' ? res.data.sent : overdue.length;
+      } catch (bulkErr) {
+        const status = bulkErr.response?.status;
+        if (status === 404 || status === 405) {
+          count = await sendViaTrigger(overdue);
+        } else if (isForbiddenError(bulkErr)) {
+          throw bulkErr;
+        } else {
+          throw bulkErr;
+        }
+      }
+
+      setSentMsg(
+        typeof count === 'number'
+          ? `Reminders sent to ${count} patient${count === 1 ? '' : 's'}.`
+          : 'Reminders sent successfully.'
+      );
+      setTimeout(() => setSentMsg(''), 4000);
       closeModal();
     } catch (e) {
-      setModalError(getApiErrorMessage(e, 'Failed to send reminders'));
+      setModalError(
+        isForbiddenError(e)
+          ? reminderPermissionMessage()
+          : getApiErrorMessage(e, 'Failed to send reminders')
+      );
     } finally {
       setSending(false);
     }
@@ -103,7 +168,7 @@ export default function DoctorDashboard() {
 
   return (
     <div className="min-h-[calc(100vh-4.25rem)] bg-slate-50">
-      <div className="ct-container py-8 sm:py-10">
+      <div className="ct-container ct-page-enter py-8 sm:py-10">
         <div className="mb-8 flex flex-col gap-4 rounded-[1.5rem] border border-line bg-white p-6 shadow-card sm:flex-row sm:items-end sm:justify-between sm:p-7">
           <div>
             <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-care-blue">
@@ -116,29 +181,29 @@ export default function DoctorDashboard() {
               Here&apos;s what needs your attention across chronic-care follow-up.
             </p>
           </div>
-          <Button as={Link} to="/add-patient" variant="primary" className="shrink-0">
-            + Add Patient
-          </Button>
-          <button
-            type="button"
-            onClick={refresh}
-            disabled={refreshing}
-            className="rounded-lg border border-line bg-white px-4 py-2 text-sm font-semibold text-navy hover:bg-slate-50 disabled:opacity-50"
-          >
-            {refreshing ? 'Refreshing…' : 'Refresh'}
-          </button>
+          <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+            <Button as={Link} to="/add-patient" variant="primary" className="shrink-0">
+              + Add Patient
+            </Button>
+            <Button type="button" variant="navy" className="shrink-0" onClick={openReminderModal} disabled={sending}>
+              Send Reminders
+            </Button>
+            <button
+              type="button"
+              onClick={refresh}
+              disabled={refreshing}
+              className="rounded-control border border-line bg-white px-4 py-3 text-sm font-semibold text-navy transition hover:bg-slate-50 disabled:opacity-50"
+            >
+              {refreshing ? 'Refreshing…' : 'Refresh'}
+            </button>
+          </div>
         </div>
 
-        <div className="my-4 flex items-center gap-3">
-          <button
-            onClick={openReminderModal}
-            disabled={sending}
-            className="bg-purple-600 text-white px-4 py-2 rounded text-sm disabled:opacity-50"
-          >
-            Remind Patients Missing Readings
-          </button>
-          {sentMsg && <span className="text-sm text-green-700">{sentMsg}</span>}
-        </div>
+        {sentMsg && (
+          <div className="ct-feedback mb-6 rounded-control border border-green-200 bg-green-50 px-4 py-3 text-sm text-success" role="status">
+            {sentMsg}
+          </div>
+        )}
 
         {error && (
           <div className="mb-6 rounded-control border border-red-200 bg-red-50 px-4 py-3 text-sm text-danger" role="alert">
@@ -234,11 +299,13 @@ export default function DoctorDashboard() {
                     >
                       <div>
                         <p className="text-sm font-semibold text-navy">{r.patientName}</p>
-                        <p className="text-xs capitalize text-ink-muted">
-                          {r.type.replace(/_/g, ' ')} · {new Date(r.logged_at).toLocaleDateString()}
+                        <p className="text-xs text-ink-muted">
+                          {formatReadingTypeLabel(r.type)} · {new Date(r.logged_at).toLocaleDateString()}
                         </p>
                       </div>
-                      <p className="text-sm font-bold text-navy">{r.value}</p>
+                      <p className="text-sm font-bold text-navy">
+                        {r.type === 'bp_sys' || r.type === 'bp_dia' ? `${r.value} mmHg` : r.value}
+                      </p>
                     </li>
                   ))}
                 </ul>
@@ -269,34 +336,41 @@ export default function DoctorDashboard() {
       {/* ── Reminder modal ──────────────────────── */}
       {modalOpen && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          className="ct-modal-backdrop fixed inset-0 z-50 flex items-center justify-center bg-navy/40 p-4"
           onClick={closeModal}
         >
           <div
-            className="w-full max-w-lg rounded-2xl bg-white shadow-xl"
+            className="ct-modal-panel w-full max-w-lg rounded-2xl bg-white shadow-soft"
             onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-labelledby="reminder-modal-title"
           >
             <div className="border-b border-line px-6 py-4">
-              <h2 className="text-lg font-bold text-navy">Remind patients missing readings</h2>
-              <p className="mt-1 text-sm text-ink-muted">
-                These patients haven&apos;t logged a reading within their expected window.
+              <h2 id="reminder-modal-title" className="text-lg font-bold text-navy">
+                Send Reminders
+              </h2>
+              <p className="mt-2 text-sm leading-relaxed text-ink-muted">
+                Send reminders to patients with due or missed follow-up readings?
+              </p>
+              <p className="mt-1 text-sm leading-relaxed text-ink-muted">
+                Patients who have already completed the action can ignore the message.
               </p>
             </div>
 
             <div className="max-h-80 overflow-y-auto px-6 py-4">
               {modalLoading && (
-                <p className="text-sm text-ink-muted">Checking patients…</p>
+                <p className="text-sm text-ink-muted">Checking patients who may need a reminder…</p>
               )}
 
               {!modalLoading && modalError && (
-                <div className="rounded-control border border-red-200 bg-red-50 px-4 py-3 text-sm text-danger">
+                <div className="ct-feedback rounded-control border border-red-200 bg-red-50 px-4 py-3 text-sm text-danger">
                   {modalError}
                 </div>
               )}
 
               {!modalLoading && !modalError && overdue.length === 0 && (
                 <div className="rounded-control border border-green-200 bg-green-50 px-4 py-3 text-sm text-success">
-                  No patients are overdue on readings.
+                  No patients currently need a reading reminder.
                 </div>
               )}
 
@@ -309,7 +383,7 @@ export default function DoctorDashboard() {
                     >
                       <div>
                         <p className="text-sm font-semibold text-navy">{p.full_name}</p>
-                        <p className="text-xs text-ink-muted">{p.phone || 'No phone on file'}</p>
+                        <p className="text-xs text-ink-muted">Due or overdue reading</p>
                       </div>
                       <span className="text-xs font-semibold text-warning">
                         {p.days_since_last == null
@@ -324,24 +398,25 @@ export default function DoctorDashboard() {
 
             <div className="flex justify-end gap-3 border-t border-line px-6 py-4">
               <button
+                type="button"
                 onClick={closeModal}
-                className="rounded-lg px-4 py-2 text-sm font-semibold text-ink-muted hover:bg-slate-100"
+                className="rounded-control px-4 py-2 text-sm font-semibold text-ink-muted transition hover:bg-slate-100"
                 disabled={sending}
               >
                 Cancel
               </button>
-              <button
+              <Button
+                type="button"
+                variant="navy"
                 onClick={confirmSend}
-                disabled={
-                  sending ||
-                  modalLoading ||
-                  !!modalError ||
-                  overdue.length === 0
-                }
-                className="rounded-lg bg-purple-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                disabled={sending || modalLoading || overdue.length === 0}
               >
-                {sending ? 'Sending…' : `Send to ${overdue.length} patient(s)`}
-              </button>
+                {sending
+                  ? 'Sending reminders...'
+                  : overdue.length === 0
+                    ? 'No patients to remind'
+                    : `Send to ${overdue.length} patient${overdue.length === 1 ? '' : 's'}`}
+              </Button>
             </div>
           </div>
         </div>

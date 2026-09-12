@@ -4,6 +4,7 @@ import api from '../api/client';
 import TrendChart from '../components/TrendChart';
 import FlagBadge, { StatusBadge } from '../components/FlagBadge';
 import { Button, Card, EmptyState, Field, LoadingState } from '../components/ui';
+import { latestBloodPressure, latestOfType } from '../utils/readings';
 
 export default function PatientDetail() {
   const { id } = useParams();
@@ -238,8 +239,9 @@ export default function PatientDetail() {
     if (appointments.some((a) => a.status === 'requested')) computed.push('pending_appointment_request');
     return computed;
   })();
-  const latestByType = (type) =>
-    [...readings].filter((r) => r.type === type).sort((a, b) => new Date(b.logged_at) - new Date(a.logged_at))[0];
+  const sugar = latestOfType(readings, 'sugar');
+  const bp = latestBloodPressure(readings);
+  const weight = latestOfType(readings, 'weight');
 
   const statusColor = (s) => {
     if (s === 'requested') return 'text-warning';
@@ -253,7 +255,7 @@ export default function PatientDetail() {
   const todayStr = new Date().toISOString().split('T')[0];
 
   return (
-    <div className="ct-container py-8 sm:py-10">
+    <div className="ct-container ct-page-enter py-8 sm:py-10">
       <Link to="/doctor" className="text-sm font-semibold text-care-blue hover:underline">
         ← Back to dashboard
       </Link>
@@ -283,7 +285,7 @@ export default function PatientDetail() {
         </div> */}
         <div className="flex flex-wrap items-center gap-3">
           {msg && (
-            <span className={`text-sm font-medium ${msgTone === 'error' ? 'text-danger' : 'text-success'}`}>
+            <span className={`ct-feedback text-sm font-medium ${msgTone === 'error' ? 'text-danger' : 'text-success'}`}>
               {msg}
             </span>
           )}
@@ -302,23 +304,47 @@ export default function PatientDetail() {
       )}
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {[
-          ['Blood sugar', latestByType('sugar'), 'mg/dL'],
-          ['BP systolic', latestByType('bp_sys'), 'mmHg'],
-          ['BP diastolic', latestByType('bp_dia'), 'mmHg'],
-          ['Weight', latestByType('weight'), 'kg'],
-        ].map(([label, reading, unit]) => (
-          <Card key={label} className="p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">{label}</p>
-            <p className="mt-1 font-display text-2xl text-navy">
-              {reading ? reading.value : '—'}
-              {reading && <span className="ml-1 text-sm font-sans text-ink-muted">{unit}</span>}
-            </p>
-            <p className="mt-1 text-xs text-ink-muted">
-              {reading ? new Date(reading.logged_at).toLocaleString() : 'No reading yet'}
-            </p>
-          </Card>
-        ))}
+        <Card className="p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">Blood sugar</p>
+          <p className="mt-1 font-display text-2xl text-navy">
+            {sugar ? sugar.value : '—'}
+            {sugar && <span className="ml-1 text-sm font-sans text-ink-muted">mg/dL</span>}
+          </p>
+          <p className="mt-1 text-xs text-ink-muted">
+            {sugar ? new Date(sugar.logged_at).toLocaleString() : 'No reading yet'}
+          </p>
+        </Card>
+        <Card className="p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">Blood pressure</p>
+          <p className="mt-1 font-display text-2xl text-navy">
+            {bp.display || '—'}
+            {bp.display && <span className="ml-1 text-sm font-sans text-ink-muted">mmHg</span>}
+          </p>
+          <p className="mt-1 text-xs text-ink-muted">
+            {bp.logged_at ? new Date(bp.logged_at).toLocaleString() : 'No reading yet'}
+          </p>
+        </Card>
+        <Card className="p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">Weight</p>
+          <p className="mt-1 font-display text-2xl text-navy">
+            {weight ? weight.value : '—'}
+            {weight && <span className="ml-1 text-sm font-sans text-ink-muted">kg</span>}
+          </p>
+          <p className="mt-1 text-xs text-ink-muted">
+            {weight ? new Date(weight.logged_at).toLocaleString() : 'No reading yet'}
+          </p>
+        </Card>
+        <Card className="p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">Next checkup</p>
+          <p className="mt-1 font-display text-2xl text-navy">
+            {patient.next_checkup_date
+              ? new Date(patient.next_checkup_date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+              : '—'}
+          </p>
+          <p className="mt-1 text-xs text-ink-muted">
+            {patient.next_checkup_date || 'Not set'}
+          </p>
+        </Card>
       </div>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[1.4fr_0.9fr]">
@@ -326,8 +352,7 @@ export default function PatientDetail() {
           <h2 className="text-lg font-bold text-navy">Health trends</h2>
           <p className="mt-1 text-sm text-ink-muted">Longitudinal readings for this patient.</p>
           <TrendChart readings={readings} type="sugar" />
-          <TrendChart readings={readings} type="bp_sys" />
-          <TrendChart readings={readings} type="bp_dia" />
+          <TrendChart readings={readings} type="bp" />
           <TrendChart readings={readings} type="weight" />
         </Card>
 

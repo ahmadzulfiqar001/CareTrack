@@ -25,6 +25,9 @@ export function getApiErrorMessage(err, fallback = 'Something went wrong') {
     if (/duplicate|unique|already exists/i.test(text)) {
       return 'This email is already registered.';
     }
+    if (/^forbidden$/i.test(text)) {
+      return 'You do not have permission to perform this action.';
+    }
     return text;
   }
 

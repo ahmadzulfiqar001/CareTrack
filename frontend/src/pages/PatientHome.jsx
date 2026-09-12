@@ -11,6 +11,12 @@ import {
   HealthMetricCard,
   LoadingState,
 } from '../components/ui';
+import {
+  formatReadingTypeLabel,
+  latestBloodPressure,
+  latestOfType,
+  pairReadingsForDisplay,
+} from '../utils/readings';
 
 export default function PatientHome() {
   const [profile, setProfile] = useState(null);
@@ -96,15 +102,10 @@ export default function PatientHome() {
 
   if (!profile) return <LoadingState label="Loading your health portal…" />;
 
-  const latest = (type) =>
-    [...readings]
-      .filter((r) => r.type === type)
-      .sort((a, b) => new Date(b.logged_at) - new Date(a.logged_at))[0];
-
-  const sugar = latest('sugar');
-  const bpSys = latest('bp_sys');
-  const bpDia = latest('bp_dia');
-  const weight = latest('weight');
+  const sugar = latestOfType(readings, 'sugar');
+  const bp = latestBloodPressure(readings);
+  const weight = latestOfType(readings, 'weight');
+  const recentLogs = pairReadingsForDisplay(readings).slice(0, 8);
   const upcoming = [...appts]
     .filter((a) => a.status === 'scheduled' || a.status === 'requested')
     .sort((a, b) => new Date(a.scheduled_at) - new Date(b.scheduled_at))[0];
@@ -122,7 +123,7 @@ export default function PatientHome() {
   };
 
   return (
-    <div className="ct-container py-8 sm:py-10">
+    <div className="ct-container ct-page-enter py-8 sm:py-10">
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <p className="ct-kicker">Patient portal</p>
@@ -143,7 +144,7 @@ export default function PatientHome() {
       </div>
 
       {msg && (
-        <p className={`mb-4 text-sm font-medium ${msgTone === 'error' ? 'text-danger' : 'text-success'}`}>
+        <p className={`ct-feedback mb-4 text-sm font-medium ${msgTone === 'error' ? 'text-danger' : 'text-success'}`}>
           {msg}
         </p>
       )}
@@ -157,9 +158,9 @@ export default function PatientHome() {
         />
         <HealthMetricCard
           label="Blood pressure"
-          value={bpSys && bpDia ? `${bpSys.value}/${bpDia.value}` : bpSys?.value}
+          value={bp.display}
           unit="mmHg"
-          hint={bpSys ? `Logged ${new Date(bpSys.logged_at).toLocaleDateString()}` : 'No reading yet'}
+          hint={bp.logged_at ? `Logged ${new Date(bp.logged_at).toLocaleDateString()}` : 'No reading yet'}
         />
         <HealthMetricCard
           label="Weight"
@@ -191,7 +192,7 @@ export default function PatientHome() {
               </Button>
             </div>
             <TrendChart readings={readings} type="sugar" />
-            <TrendChart readings={readings} type="bp_sys" />
+            <TrendChart readings={readings} type="bp" />
             <TrendChart readings={readings} type="weight" />
           </Card>
 
@@ -209,18 +210,18 @@ export default function PatientHome() {
               />
             ) : (
               <ul className="mt-3 divide-y divide-line">
-                {[...readings]
-                  .sort((a, b) => new Date(b.logged_at) - new Date(a.logged_at))
-                  .slice(0, 8)
-                  .map((r) => (
-                    <li key={r.id} className="flex items-center justify-between gap-3 py-3 text-sm">
-                      <div>
-                        <p className="font-semibold capitalize text-navy">{r.type.replace(/_/g, ' ')}</p>
-                        <p className="text-xs text-ink-muted">{new Date(r.logged_at).toLocaleString()}</p>
-                      </div>
-                      <p className="font-bold text-navy">{r.value}</p>
-                    </li>
-                  ))}
+                {recentLogs.map((r) => (
+                  <li key={r.id} className="flex items-center justify-between gap-3 py-3 text-sm">
+                    <div>
+                      <p className="font-semibold text-navy">{formatReadingTypeLabel(r.type)}</p>
+                      <p className="text-xs text-ink-muted">{new Date(r.logged_at).toLocaleString()}</p>
+                    </div>
+                    <p className="font-bold text-navy">
+                      {r.valueLabel}
+                      {r.type === 'bp' ? <span className="ml-1 text-xs font-medium text-ink-muted">mmHg</span> : null}
+                    </p>
+                  </li>
+                ))}
               </ul>
             )}
           </Card>
