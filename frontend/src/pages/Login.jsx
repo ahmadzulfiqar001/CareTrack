@@ -79,10 +79,10 @@ export default function Login() {
                 type="button"
                 aria-pressed={loginRole === role}
                 onClick={() => setLoginRole(role)}
-                className={`flex min-h-12 min-w-0 flex-1 items-center justify-center gap-2 rounded-[17px] border-2 px-2 py-3 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-teal-700 ${
+                className={`flex min-h-12 min-w-0 flex-1 items-center justify-center gap-2 rounded-[17px] border-2 px-2 py-3 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-care-blue ${
                   loginRole === role
-                    ? 'border-white bg-gradient-to-r from-[#007765] to-[#066b94] text-white ring-2 ring-teal-700'
-                    : 'border-[#c5dbd9] bg-white text-[#568f88]'
+                    ? 'border-white bg-care-blue text-white ring-2 ring-care-blue'
+                    : 'border-blue-200 bg-white text-care-blue'
                 }`}
               >
                 {role === 'patient' && (
