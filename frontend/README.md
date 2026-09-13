@@ -1,4 +1,29 @@
-# React + Vite
+# CareTrack frontend
+
+## Deploy to Vercel
+
+Use these Vercel project settings:
+
+- **Root Directory:** `frontend`
+- **Framework Preset:** Vite
+- **Build Command:** `npm run build`
+- **Output Directory:** `dist`
+- **Environment Variable:** `VITE_API` set to the deployed backend URL including
+  `/api` (for example, `https://your-backend.example.com/api`).
+
+The backend CORS allowlist in `backend/src/app.js` must include the frontend's
+deployed origin. Redeploy the backend after changing that allowlist.
+
+`vercel.json` serves `index.html` for client-side routes so React Router can
+handle paths such as `/register`, `/login`, and `/doctor`, including direct
+visits and page refreshes. Without this rewrite, Vercel returns `404: NOT_FOUND`
+for these paths. See the [Vercel Vite documentation](https://vercel.com/docs/frameworks/frontend/vite#using-vite-to-make-spas).
+
+Deploy a new build after changing `vercel.json` or `VITE_API`. After deployment,
+open `/register` and `/login` directly and refresh each page. Both should render
+the app. After signing in as a doctor, refresh `/doctor` to check the dashboard.
+
+## Vite template notes
 
 This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
 
