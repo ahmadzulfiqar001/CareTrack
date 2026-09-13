@@ -33,7 +33,7 @@ export default function Register() {
       });
       nav('/login', {
         replace: true,
-        state: { registered: true, email: form.email.trim() },
+        state: { registered: true },
       });
     } catch (err) {
       setError(getApiErrorMessage(err, 'Registration failed. Please try again.'));

@@ -10,9 +10,7 @@ export default function Login() {
   const location = useLocation();
   const registered = location.state?.registered === true;
   const [loginRole, setLoginRole] = useState(registered ? 'doctor' : 'patient');
-  const [email, setEmail] = useState(() => (
-    registered && typeof location.state.email === 'string' ? location.state.email : ''
-  ));
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -115,15 +113,14 @@ export default function Login() {
             </div>
           )}
 
-          <form onSubmit={submit} className="mt-5 space-y-3.5" noValidate>
+          <form onSubmit={submit} className="mt-5 space-y-3.5" autoComplete="off" noValidate>
             <div>
               <label className="ct-label" htmlFor="login-email">Email address</label>
               <input
                 id="login-email"
                 className="ct-input !py-2.5"
                 type="email"
-                autoComplete="email"
-                placeholder="you@clinic.com"
+                autoComplete="off"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -135,8 +132,7 @@ export default function Login() {
                 id="login-password"
                 className="ct-input !py-2.5"
                 type="password"
-                autoComplete="current-password"
-                placeholder="••••••••"
+                autoComplete="off"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -147,12 +143,14 @@ export default function Login() {
             </Button>
           </form>
 
-          <p className="mt-5 text-center text-sm text-ink-muted">
-            No clinic account?{' '}
-            <Link to="/register" className="font-semibold text-care-blue hover:underline">
-              Register as doctor
-            </Link>
-          </p>
+          {loginRole === 'doctor' && (
+            <p className="mt-5 text-center text-sm text-ink-muted">
+              No clinic account?{' '}
+              <Link to="/register" className="font-semibold text-care-blue hover:underline">
+                Register as doctor
+              </Link>
+            </p>
+          )}
           <p className="mt-2 text-center text-xs text-ink-muted">
             Patients: use the email and password provided by your clinic.
           </p>
