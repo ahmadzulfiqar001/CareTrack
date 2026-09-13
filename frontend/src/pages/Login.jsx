@@ -9,6 +9,7 @@ import authImg from '../assets/auth-consult.jpg';
 export default function Login() {
   const location = useLocation();
   const registered = location.state?.registered === true;
+  const [loginRole, setLoginRole] = useState(registered ? 'doctor' : 'patient');
   const [email, setEmail] = useState(() => (
     registered && typeof location.state.email === 'string' ? location.state.email : ''
   ));
@@ -69,6 +70,38 @@ export default function Login() {
           <p className="mt-1.5 text-sm text-ink-muted">
             Log in with email and password to continue.
           </p>
+
+          <div className="mt-6 flex gap-3" role="group" aria-label="Login account type">
+            {[
+              { role: 'patient', label: 'Patient Login' },
+              { role: 'doctor', label: 'Doctor Portal / Login' },
+            ].map(({ role, label }) => (
+              <button
+                key={role}
+                type="button"
+                aria-pressed={loginRole === role}
+                onClick={() => setLoginRole(role)}
+                className={`flex min-h-12 min-w-0 flex-1 items-center justify-center gap-2 rounded-[17px] border-2 px-2 py-3 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-teal-700 ${
+                  loginRole === role
+                    ? 'border-white bg-gradient-to-r from-[#007765] to-[#066b94] text-white ring-2 ring-teal-700'
+                    : 'border-[#c5dbd9] bg-white text-[#568f88]'
+                }`}
+              >
+                {role === 'patient' && (
+                  <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <rect x="6" y="2" width="12" height="20" rx="2" />
+                    <path d="M11 5h2" />
+                  </svg>
+                )}
+                <span>{label}</span>
+                {role === 'doctor' && (
+                  <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M5 12h14m-7-7 7 7-7 7" />
+                  </svg>
+                )}
+              </button>
+            ))}
+          </div>
 
           {registered && (
             <div className="ct-feedback mt-4 rounded-control border border-teal-200 bg-teal-50 px-3 py-2.5 text-sm text-teal-800" role="status">
