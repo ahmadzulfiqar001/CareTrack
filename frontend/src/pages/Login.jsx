@@ -1,13 +1,17 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import api from '../api/client';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
+import api, { getApiErrorMessage } from '../api/client';
 import { useAuth } from '../context/AuthContext';
 import Logo from '../components/Logo';
 import { Button } from '../components/ui';
 import authImg from '../assets/auth-consult.jpg';
 
 export default function Login() {
-  const [email, setEmail] = useState('');
+  const location = useLocation();
+  const registered = location.state?.registered === true;
+  const [email, setEmail] = useState(() => (
+    registered && typeof location.state.email === 'string' ? location.state.email : ''
+  ));
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -23,11 +27,11 @@ export default function Login() {
     }
     setLoading(true);
     try {
-      const { data } = await api.post('/auth/login', { email, password });
+      const { data } = await api.post('/auth/login', { email: email.trim(), password });
       login(data.token, data.user);
-      nav(data.user.role === 'doctor' ? '/doctor' : '/me');
+      nav(data.user.role === 'doctor' ? '/doctor' : '/me', { replace: true });
     } catch (err) {
-      setError(err.response?.data?.error || 'Login failed');
+      setError(getApiErrorMessage(err, 'Login failed. Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -65,6 +69,12 @@ export default function Login() {
           <p className="mt-1.5 text-sm text-ink-muted">
             Log in with email and password to continue.
           </p>
+
+          {registered && (
+            <div className="ct-feedback mt-4 rounded-control border border-teal-200 bg-teal-50 px-3 py-2.5 text-sm text-teal-800" role="status">
+              Account created successfully. Log in to open your clinic dashboard.
+            </div>
+          )}
 
           {error && (
             <div className="ct-feedback mt-4 rounded-control border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-danger" role="alert">

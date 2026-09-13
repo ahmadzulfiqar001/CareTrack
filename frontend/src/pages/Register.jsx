@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import api from '../api/client';
-import { useAuth } from '../context/AuthContext';
+import api, { getApiErrorMessage } from '../api/client';
 import Logo from '../components/Logo';
 import { Button } from '../components/ui';
 import authImg from '../assets/auth-consult.jpg';
@@ -10,7 +9,6 @@ export default function Register() {
   const [form, setForm] = useState({ email: '', password: '', full_name: '', phone: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
   const nav = useNavigate();
 
   const submit = async (e) => {
@@ -26,17 +24,19 @@ export default function Register() {
     }
     setLoading(true);
     try {
-      const { data } = await api.post('/auth/register', {
+      await api.post('/auth/register', {
         email: form.email.trim(),
         password: form.password,
         full_name: form.full_name.trim(),
         phone: form.phone.trim(),
         role: 'doctor',
       });
-      login(data.token, data.user);
-      nav('/doctor');
+      nav('/login', {
+        replace: true,
+        state: { registered: true, email: form.email.trim() },
+      });
     } catch (err) {
-      setError(err.response?.data?.error || 'Register failed');
+      setError(getApiErrorMessage(err, 'Registration failed. Please try again.'));
     } finally {
       setLoading(false);
     }

@@ -45,6 +45,11 @@ a successful preview deployment alone does not update the production domain.
 After deployment, open `/register` and `/login` directly and refresh each page. Both should render
 the app. After signing in as a doctor, refresh `/doctor` to check the dashboard.
 
+Doctor registration creates the account and opens `/login` with the email
+prefilled and a success message. Registration does not sign the doctor in.
+Submitting valid credentials signs in and opens `/doctor`; invalid credentials
+keep the user on the login page with an error.
+
 ## Vite template notes
 
 This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
