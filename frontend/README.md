@@ -2,7 +2,25 @@
 
 ## Deploy to Vercel
 
-Use these Vercel project settings:
+### Frontend and backend in one Vercel Services project
+
+When deploying the repository's root `vercel.json`, keep the Vercel project's
+**Root Directory** at the repository root (blank) and select **Services** as
+the framework. The API client defaults to `/api` when `VITE_API` is unset or
+empty, so browser requests use the backend service on the same deployment.
+You can also set `VITE_API=/api` explicitly.
+
+The root config sends `/api` requests to the backend and other requests to the
+frontend. `services.frontend.rewrites` then serves `index.html` for React routes
+such as `/register` and `/doctor`. This fallback must be configured for the
+frontend service, in addition to the top-level service routing.
+
+See the [Vercel Services guide](https://vercel.com/kb/guide/vercel-services) and
+[service rewrite configuration](https://vercel.com/docs/services/config-reference#rewrites).
+
+### Frontend deployed as a separate Vercel project
+
+Use these settings when deploying only the frontend:
 
 - **Root Directory:** `frontend`
 - **Framework Preset:** Vite
@@ -14,13 +32,17 @@ Use these Vercel project settings:
 The backend CORS allowlist in `backend/src/app.js` must include the frontend's
 deployed origin. Redeploy the backend after changing that allowlist.
 
-`vercel.json` serves `index.html` for client-side routes so React Router can
+`frontend/vercel.json` serves `index.html` for client-side routes so React Router can
 handle paths such as `/register`, `/login`, and `/doctor`, including direct
 visits and page refreshes. Without this rewrite, Vercel returns `404: NOT_FOUND`
 for these paths. See the [Vercel Vite documentation](https://vercel.com/docs/frameworks/frontend/vite#using-vite-to-make-spas).
 
-Deploy a new build after changing `vercel.json` or `VITE_API`. After deployment,
-open `/register` and `/login` directly and refresh each page. Both should render
+### Verify the production deployment
+
+Deploy a new build after changing the relevant `vercel.json` or `VITE_API`.
+Confirm the production deployment uses the merged commit containing the fix;
+a successful preview deployment alone does not update the production domain.
+After deployment, open `/register` and `/login` directly and refresh each page. Both should render
 the app. After signing in as a doctor, refresh `/doctor` to check the dashboard.
 
 ## Vite template notes
