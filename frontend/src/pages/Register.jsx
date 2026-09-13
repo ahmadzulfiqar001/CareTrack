@@ -46,12 +46,12 @@ export default function Register() {
 
   return (
     <div className="ct-container flex items-center py-4 lg:min-h-[calc(100vh-4.25rem)] lg:py-5">
-      <div className="grid w-full overflow-hidden rounded-[1.5rem] border border-line bg-white shadow-card lg:grid-cols-2">
+      <div className="ct-page-enter grid w-full overflow-hidden rounded-[1.5rem] border border-line bg-white shadow-card lg:grid-cols-2">
         <div className="relative hidden min-h-[500px] max-h-[calc(100vh-5.75rem)] bg-navy lg:block">
           <img
             src={authImg}
             alt="Doctor consulting with a patient"
-            className="absolute inset-0 h-full w-full object-cover object-center opacity-80"
+            className="absolute inset-0 h-full w-full object-cover object-center opacity-80 transition duration-700"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-navy via-navy/45 to-navy/10" />
           <div className="absolute bottom-0 left-0 p-8 text-white">
@@ -76,7 +76,7 @@ export default function Register() {
           </p>
 
           {error && (
-            <div className="mt-3 rounded-control border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-danger" role="alert">
+            <div className="ct-feedback mt-3 rounded-control border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-danger" role="alert">
               {error}
             </div>
           )}

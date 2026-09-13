@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../api/client';
 import { Button, Card, Field, LoadingState } from '../components/ui';
+import { parseBpField, validateBloodPressure } from '../utils/readings';
 
 const TYPES = [
   { value: 'sugar', label: 'Blood sugar', unit: 'mg/dL', hint: 'Typical fasting range varies — enter your meter reading.' },
-  { value: 'bp', label: 'Blood pressure', unit: 'mmHg', hint: 'Enter systolic and diastolic, separated by a slash. E.g. 120/90.' },
+  { value: 'bp', label: 'Blood pressure', unit: 'mmHg', hint: 'Enter systolic and diastolic as two numbers, e.g. 120 / 80.' },
   { value: 'weight', label: 'Weight', unit: 'kg', hint: 'Use the same scale when possible.' },
 ];
 
@@ -13,6 +14,8 @@ export default function LogReading() {
   const [profile, setProfile] = useState(null);
   const [type, setType] = useState('sugar');
   const [value, setValue] = useState('');
+  const [sys, setSys] = useState('');
+  const [dia, setDia] = useState('');
   const [msg, setMsg] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -24,6 +27,19 @@ export default function LogReading() {
 
   const meta = TYPES.find((t) => t.value === type) || TYPES[0];
 
+  const resetValues = () => {
+    setValue('');
+    setSys('');
+    setDia('');
+    setError('');
+  };
+
+  const handleSysChange = (raw) => {
+    const parsed = parseBpField(raw);
+    setSys(parsed.value);
+    if (parsed.leftover) setDia(parsed.leftover);
+  };
+
   const submit = async (e) => {
     e.preventDefault();
     setError('');
@@ -31,34 +47,22 @@ export default function LogReading() {
     if (!profile) return;
 
     if (type === 'bp') {
-      // Expect "120/90"
-      const raw = value.trim();
-      const parts = raw.split('/').map((s) => s.trim());
-      if (parts.length !== 2 || !parts[0] || !parts[1]) {
-        setError('Enter BP as systolic/diastolic, e.g. 120/90.');
-        return;
-      }
-      const sys = Number(parts[0]);
-      const dia = Number(parts[1]);
-      if (Number.isNaN(sys) || Number.isNaN(dia)) {
-        setError('Both BP values must be numbers.');
-        return;
-      }
-      if (sys <= 0 || dia <= 0) {
-        setError('Both BP values must be greater than zero.');
-        return;
-      }
-      if (dia >= sys) {
-        setError('Diastolic must be lower than systolic.');
+      const validation = validateBloodPressure(sys, dia);
+      if (validation) {
+        setError(validation);
         return;
       }
 
+      const sysNum = Number(sys);
+      const diaNum = Number(dia);
+
       setLoading(true);
       try {
-        await api.post('/readings', { patient_id: profile.id, type: 'bp_sys', value: sys });
-        await api.post('/readings', { patient_id: profile.id, type: 'bp_dia', value: dia });
+        await api.post('/readings', { patient_id: profile.id, type: 'bp_sys', value: sysNum });
+        await api.post('/readings', { patient_id: profile.id, type: 'bp_dia', value: diaNum });
         setMsg('Reading saved successfully.');
-        setValue('');
+        setSys('');
+        setDia('');
         setTimeout(() => {
           setMsg('');
           nav('/me');
@@ -71,7 +75,6 @@ export default function LogReading() {
       return;
     }
 
-    // non-BP types
     const num = Number(value);
     if (value === '' || Number.isNaN(num)) {
       setError('Please enter a valid number.');
@@ -100,14 +103,9 @@ export default function LogReading() {
 
   if (!profile) return <LoadingState label="Preparing logging form…" />;
 
-  const placeholder =
-    type === 'bp' ? 'e.g. 120/90' :
-    type === 'weight' ? 'e.g. 72.5' :
-    'e.g. 110';
-
   return (
     <div className="ct-container py-10">
-      <div className="mx-auto max-w-lg">
+      <div className="ct-page-enter mx-auto max-w-lg">
         <Link to="/me" className="text-sm font-semibold text-care-blue hover:underline">
           ← Back to my health
         </Link>
@@ -120,12 +118,12 @@ export default function LogReading() {
           </p>
 
           {msg && (
-            <div className="mt-4 rounded-control border border-green-200 bg-green-50 px-4 py-3 text-sm text-success" role="status">
+            <div className="ct-feedback mt-4 rounded-control border border-green-200 bg-green-50 px-4 py-3 text-sm text-success" role="status">
               {msg}
             </div>
           )}
           {error && (
-            <div className="mt-4 rounded-control border border-red-200 bg-red-50 px-4 py-3 text-sm text-danger" role="alert">
+            <div className="ct-feedback mt-4 rounded-control border border-red-200 bg-red-50 px-4 py-3 text-sm text-danger" role="alert">
               {error}
             </div>
           )}
@@ -138,8 +136,7 @@ export default function LogReading() {
                 value={type}
                 onChange={(e) => {
                   setType(e.target.value);
-                  setValue('');
-                  setError('');
+                  resetValues();
                 }}
               >
                 {TYPES.map((t) => (
@@ -150,19 +147,53 @@ export default function LogReading() {
               </select>
             </Field>
 
-            <Field label={`Value (${meta.unit})`} id="reading-value" hint={meta.hint}>
-              <input
-                id="reading-value"
-                className="ct-input text-lg"
-                type={type === 'bp' ? 'text' : 'number'}
-                step={type === 'bp' ? undefined : 'any'}
-                inputMode={type === 'bp' ? 'text' : 'decimal'}
-                placeholder={placeholder}
-                value={value}
-                onChange={(e) => setValue(e.target.value)}
-                required
-              />
-            </Field>
+            {type === 'bp' ? (
+              <Field label="Blood pressure" id="bp-sys" hint={meta.hint}>
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <input
+                    id="bp-sys"
+                    className="ct-input text-lg"
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="off"
+                    placeholder="120"
+                    aria-label="Systolic blood pressure"
+                    value={sys}
+                    onChange={(e) => handleSysChange(e.target.value)}
+                  />
+                  <span className="text-lg font-semibold text-navy" aria-hidden>
+                    /
+                  </span>
+                  <input
+                    id="bp-dia"
+                    className="ct-input text-lg"
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="off"
+                    placeholder="80"
+                    aria-label="Diastolic blood pressure"
+                    value={dia}
+                    onChange={(e) => setDia(e.target.value)}
+                  />
+                  <span className="shrink-0 text-sm font-semibold text-ink-muted">mmHg</span>
+                </div>
+                <p className="mt-1.5 text-xs text-ink-muted">e.g. 120 / 80</p>
+              </Field>
+            ) : (
+              <Field label={`Value (${meta.unit})`} id="reading-value" hint={meta.hint}>
+                <input
+                  id="reading-value"
+                  className="ct-input text-lg"
+                  type="number"
+                  step="any"
+                  inputMode="decimal"
+                  placeholder={type === 'weight' ? 'e.g. 72.5' : 'e.g. 110'}
+                  value={value}
+                  onChange={(e) => setValue(e.target.value)}
+                  required
+                />
+              </Field>
+            )}
 
             <p className="mb-4 text-xs text-ink-muted">
               Date & time are recorded automatically when you save.

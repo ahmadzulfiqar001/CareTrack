@@ -36,7 +36,7 @@ export default function Navbar() {
   const close = () => setOpen(false);
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-line bg-white/95 backdrop-blur">
+    <nav className="sticky top-0 z-50 border-b border-line bg-white/95 backdrop-blur transition-shadow duration-300">
       <div className="ct-container flex h-[4.25rem] items-center justify-between gap-4">
         <Logo to="/" showTagline size="md" />
 
@@ -122,7 +122,12 @@ export default function Navbar() {
                 </>
               )}
 
-              <Link to="/change-password" className="hover:underline">Change password</Link>
+              <Link
+                to="/change-password"
+                className="rounded-control px-3 py-2 text-sm font-semibold text-ink-muted transition hover:bg-slate-50 hover:text-navy"
+              >
+                Password
+              </Link>
               <button
                 type="button"
                 onClick={handleLogout}
@@ -136,7 +141,7 @@ export default function Navbar() {
       </div>
 
       {open && !user && isLanding && (
-        <div className="border-t border-line bg-white px-5 py-4 lg:hidden">
+        <div className="ct-chat-panel border-t border-line bg-white px-5 py-4 lg:hidden">
           <div className="flex flex-col gap-1">
             <Link to="/" onClick={close} className="rounded-control px-3 py-2.5 text-sm font-semibold text-navy hover:bg-slate-50">
               Home
