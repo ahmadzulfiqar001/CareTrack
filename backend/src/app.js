@@ -7,7 +7,8 @@ app.use(cors({
   origin: [
     'http://localhost:5173',
     'http://localhost:5174',
-    'https://care-track-public.vercel.app'
+    'https://care-track-public.vercel.app',
+    'https://frontend-nine-lyart-89.vercel.app'
   ]
 }));
 app.use(express.json());
